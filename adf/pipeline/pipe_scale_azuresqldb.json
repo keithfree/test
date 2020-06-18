@@ -1,0 +1,66 @@
+{
+	"name": "pipe_scale_azuresqldb",
+	"properties": {
+		"description": "Pipeline to scale an azure sql database",
+		"activities": [
+			{
+				"name": "Scale Database",
+				"type": "WebActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": {
+						"value": "@concat('https://management.azure.com/subscriptions/', pipeline().parameters.subscriptionId, '/resourceGroups/', pipeline().parameters.resourceGroupName, '/providers/Microsoft.Sql/servers/', pipeline().parameters.serverName, '/databases/', pipeline().parameters.databaseName, '?api-version=2017-10-01-preview')",
+						"type": "Expression"
+					},
+					"method": "PATCH",
+					"body": {
+						"value": "@concat('{\"sku\":',pipeline().parameters.sku,'}')",
+						"type": "Expression"
+					},
+					"authentication": {
+						"type": "MSI",
+						"resource": "https://management.azure.com/"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"resourceGroupName": {
+				"type": "string",
+				"defaultValue": "Azure_RAD_Dev_Data_WUS_RG"
+			},
+			"subscriptionId": {
+				"type": "string",
+				"defaultValue": "03da5fc4-4713-4057-826f-f4fb13059cfd"
+			},
+			"serverName": {
+				"type": "string",
+				"defaultValue": "rad-dev-data-wus-sql"
+			},
+			"databaseName": {
+				"type": "string",
+				"defaultValue": "stagedb"
+			},
+			"sku": {
+				"type": "string",
+				"defaultValue": {
+					"name": "S4",
+					"tier": "Standard"
+				}
+			}
+		},
+		"folder": {
+			"name": "GiftOrchestration"
+		},
+		"annotations": []
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
