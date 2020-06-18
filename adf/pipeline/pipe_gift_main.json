@@ -3,11 +3,11 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "pipe_invoke_gift",
+				"name": "Run Gift Orchestration",
 				"type": "ExecutePipeline",
 				"dependsOn": [
 					{
-						"activity": "pipe_scale_azuresqldb",
+						"activity": "SQL Scale Up",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -29,7 +29,7 @@
 				}
 			},
 			{
-				"name": "pipe_scale_azuresqldb",
+				"name": "SQL Scale Up",
 				"type": "ExecutePipeline",
 				"dependsOn": [],
 				"userProperties": [],
@@ -57,7 +57,49 @@
 							"type": "Expression"
 						},
 						"sku": {
-							"value": "@pipeline().parameters.sku",
+							"value": "@pipeline().parameters.skuBefore",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "SQL Scale Down",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Run Gift Orchestration",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pipe_scale_azuresqldb",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"resourceGroupName": {
+							"value": "@pipeline().parameters.resourceGroupName",
+							"type": "Expression"
+						},
+						"subscriptionId": {
+							"value": "@pipeline().parameters.subscriptionId",
+							"type": "Expression"
+						},
+						"serverName": {
+							"value": "@pipeline().parameters.serverName",
+							"type": "Expression"
+						},
+						"databaseName": {
+							"value": "@pipeline().parameters.databaseName",
+							"type": "Expression"
+						},
+						"sku": {
+							"value": "@pipeline().parameters.skuAfter",
 							"type": "Expression"
 						}
 					}
@@ -85,10 +127,17 @@
 				"type": "string",
 				"defaultValue": "ellis-db"
 			},
-			"sku": {
+			"skuBefore": {
 				"type": "string",
 				"defaultValue": {
 					"name": "S1",
+					"tier": "Standard"
+				}
+			},
+			"skuAfter": {
+				"type": "string",
+				"defaultValue": {
+					"name": "S0",
 					"tier": "Standard"
 				}
 			}
