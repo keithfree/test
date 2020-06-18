@@ -35,24 +35,24 @@
 		"parameters": {
 			"resourceGroupName": {
 				"type": "string",
-				"defaultValue": "Azure_RAD_Dev_Data_WUS_RG"
+				"defaultValue": "makeawish"
 			},
 			"subscriptionId": {
 				"type": "string",
-				"defaultValue": "03da5fc4-4713-4057-826f-f4fb13059cfd"
+				"defaultValue": "35b8bd96-bbb4-4450-86d4-b588422aa0e3"
 			},
 			"serverName": {
 				"type": "string",
-				"defaultValue": "rad-dev-data-wus-sql"
+				"defaultValue": "ellis-sql"
 			},
 			"databaseName": {
 				"type": "string",
-				"defaultValue": "stagedb"
+				"defaultValue": "ellis-db"
 			},
 			"sku": {
 				"type": "string",
 				"defaultValue": {
-					"name": "S4",
+					"name": "S1",
 					"tier": "Standard"
 				}
 			}
