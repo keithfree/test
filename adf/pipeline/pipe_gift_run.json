@@ -1,5 +1,5 @@
 {
-	"name": "pipe_gift_invoke",
+	"name": "pipe_gift_run",
 	"properties": {
 		"description": "This pipeline invokes the Gift (Durable Azure Function) and returns once it is fully complete or the timeout is reached",
 		"activities": [
