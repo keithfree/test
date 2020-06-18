@@ -1,0 +1,39 @@
+{
+	"name": "pipe_gift_invoke",
+	"properties": {
+		"description": "This pipeline invokes the Gift (Durable Azure Function) and returns once it is fully complete or the timeout is reached",
+		"activities": [
+			{
+				"name": "Invoke Gift Orchestration",
+				"description": "",
+				"type": "WebActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.02:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"url": {
+						"value": "@concat(pipeline().parameters.functionAppEndpoint, '/api/VendorOrchestrationHttpTrigger')",
+						"type": "Expression"
+					},
+					"method": "GET"
+				}
+			}
+		],
+		"concurrency": 1,
+		"parameters": {
+			"functionAppEndpoint": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "GiftOrchestration"
+		},
+		"annotations": []
+	}
+}
