@@ -25,6 +25,8 @@
 						"value": "@concat('{\"sku\":',pipeline().parameters.sku,'}')",
 						"type": "Expression"
 					},
+					"linkedServices": [],
+					"datasets": [],
 					"authentication": {
 						"type": "MSI",
 						"resource": "https://management.azure.com/"
