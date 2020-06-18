@@ -1,0 +1,233 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "RAD-AFD"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/pipe_scale_azuresqldb')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Pipeline to scale an azure sql database",
+				"activities": [
+					{
+						"name": "Scale Database",
+						"type": "WebActivity",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"url": {
+								"value": "@concat('https://management.azure.com/subscriptions/', pipeline().parameters.subscriptionId, '/resourceGroups/', pipeline().parameters.resourceGroupName, '/providers/Microsoft.Sql/servers/', pipeline().parameters.serverName, '/databases/', pipeline().parameters.databaseName, '?api-version=2017-10-01-preview')",
+								"type": "Expression"
+							},
+							"method": "PATCH",
+							"body": {
+								"value": "@concat('{\"sku\":',pipeline().parameters.sku,'}')",
+								"type": "Expression"
+							},
+							"authentication": {
+								"type": "MSI",
+								"resource": "https://management.azure.com/"
+							}
+						}
+					}
+				],
+				"parameters": {
+					"resourceGroupName": {
+						"type": "string",
+						"defaultValue": "makeawish"
+					},
+					"subscriptionId": {
+						"type": "string",
+						"defaultValue": "35b8bd96-bbb4-4450-86d4-b588422aa0e3"
+					},
+					"serverName": {
+						"type": "string",
+						"defaultValue": "ellis-sql"
+					},
+					"databaseName": {
+						"type": "string",
+						"defaultValue": "ellis-db"
+					},
+					"sku": {
+						"type": "string",
+						"defaultValue": {
+							"name": "S1",
+							"tier": "Standard"
+						}
+					}
+				},
+				"folder": {
+					"name": "GiftOrchestration"
+				},
+				"annotations": []
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipe_gift_run')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "This pipeline invokes the Gift (Durable Azure Function) and returns once it is fully complete or the timeout is reached",
+				"activities": [
+					{
+						"name": "Invoke Gift Orchestration",
+						"description": "",
+						"type": "WebActivity",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.02:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"url": {
+								"value": "@concat(pipeline().parameters.functionAppEndpoint, '/api/VendorOrchestrationHttpTrigger')",
+								"type": "Expression"
+							},
+							"method": "GET"
+						}
+					}
+				],
+				"concurrency": 1,
+				"parameters": {
+					"functionAppEndpoint": {
+						"type": "string"
+					}
+				},
+				"folder": {
+					"name": "GiftOrchestration"
+				},
+				"annotations": []
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipe_gift_main')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "pipe_invoke_gift",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "pipe_scale_azuresqldb",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "pipe_gift_run",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"functionAppEndpoint": {
+									"value": "@pipeline().parameters.functionAppEndpoint",
+									"type": "Expression"
+								}
+							}
+						}
+					},
+					{
+						"name": "pipe_scale_azuresqldb",
+						"type": "ExecutePipeline",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "pipe_scale_azuresqldb",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"resourceGroupName": {
+									"value": "@pipeline().parameters.resourceGroupName",
+									"type": "Expression"
+								},
+								"subscriptionId": {
+									"value": "@pipeline().parameters.subscriptionId",
+									"type": "Expression"
+								},
+								"serverName": {
+									"value": "@pipeline().parameters.serverName",
+									"type": "Expression"
+								},
+								"databaseName": {
+									"value": "@pipeline().parameters.databaseName",
+									"type": "Expression"
+								},
+								"sku": {
+									"value": "@pipeline().parameters.sku",
+									"type": "Expression"
+								}
+							}
+						}
+					}
+				],
+				"parameters": {
+					"functionAppEndpoint": {
+						"type": "string",
+						"defaultValue": "https://rad-dev-connectornetsuite-wus-fn.azurewebsites.net"
+					},
+					"resourceGroupName": {
+						"type": "string",
+						"defaultValue": "makeawish"
+					},
+					"subscriptionId": {
+						"type": "string",
+						"defaultValue": "35b8bd96-bbb4-4450-86d4-b588422aa0e3"
+					},
+					"serverName": {
+						"type": "string",
+						"defaultValue": "ellis-sql"
+					},
+					"databaseName": {
+						"type": "string",
+						"defaultValue": "ellis-db"
+					},
+					"sku": {
+						"type": "string",
+						"defaultValue": {
+							"name": "S1",
+							"tier": "Standard"
+						}
+					}
+				},
+				"folder": {
+					"name": "GiftOrchestration"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/pipe_gift_run')]",
+				"[concat(variables('factoryId'), '/pipelines/pipe_scale_azuresqldb')]"
+			]
+		}
+	]
+}
