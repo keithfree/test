@@ -1,0 +1,101 @@
+{
+	"name": "pipe_gift_main",
+	"properties": {
+		"activities": [
+			{
+				"name": "pipe_invoke_gift",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "pipe_scale_azuresqldb",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pipe_gift_run",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"functionAppEndpoint": {
+							"value": "@pipeline().parameters.functionAppEndpoint",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "pipe_scale_azuresqldb",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pipe_scale_azuresqldb",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"resourceGroupName": {
+							"value": "@pipeline().parameters.resourceGroupName",
+							"type": "Expression"
+						},
+						"subscriptionId": {
+							"value": "@pipeline().parameters.subscriptionId",
+							"type": "Expression"
+						},
+						"serverName": {
+							"value": "@pipeline().parameters.serverName",
+							"type": "Expression"
+						},
+						"databaseName": {
+							"value": "@pipeline().parameters.databaseName",
+							"type": "Expression"
+						},
+						"sku": {
+							"value": "@pipeline().parameters.sku",
+							"type": "Expression"
+						}
+					}
+				}
+			}
+		],
+		"parameters": {
+			"functionAppEndpoint": {
+				"type": "string",
+				"defaultValue": "https://rad-dev-connectornetsuite-wus-fn.azurewebsites.net"
+			},
+			"resourceGroupName": {
+				"type": "string",
+				"defaultValue": "makeawish"
+			},
+			"subscriptionId": {
+				"type": "string",
+				"defaultValue": "35b8bd96-bbb4-4450-86d4-b588422aa0e3"
+			},
+			"serverName": {
+				"type": "string",
+				"defaultValue": "ellis-sql"
+			},
+			"databaseName": {
+				"type": "string",
+				"defaultValue": "ellis-db"
+			},
+			"sku": {
+				"type": "string",
+				"defaultValue": {
+					"name": "S1",
+					"tier": "Standard"
+				}
+			}
+		},
+		"folder": {
+			"name": "GiftOrchestration"
+		},
+		"annotations": []
+	}
+}
