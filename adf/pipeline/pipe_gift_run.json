@@ -28,7 +28,8 @@
 		"concurrency": 1,
 		"parameters": {
 			"functionAppEndpoint": {
-				"type": "string"
+				"type": "string",
+				"defaultValue": "https://rad-dev-connectornetsuite-wus-fn.azurewebsites.net"
 			}
 		},
 		"folder": {
