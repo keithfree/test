@@ -3,8 +3,9 @@
 	"properties": {
 		"activities": [
 			{
-				"name": "Run Gift Orchestration",
-				"type": "ExecutePipeline",
+				"name": "Run Gift Function",
+				"description": "",
+				"type": "WebActivity",
 				"dependsOn": [
 					{
 						"activity": "SQL Scale Up",
@@ -13,19 +14,20 @@
 						]
 					}
 				],
+				"policy": {
+					"timeout": "0.02:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
 				"userProperties": [],
 				"typeProperties": {
-					"pipeline": {
-						"referenceName": "pipe_gift_run",
-						"type": "PipelineReference"
+					"url": {
+						"value": "@concat(pipeline().parameters.functionAppEndpoint, '/api/VendorOrchestrationHttpTrigger')",
+						"type": "Expression"
 					},
-					"waitOnCompletion": true,
-					"parameters": {
-						"functionAppEndpoint": {
-							"value": "@pipeline().parameters.functionAppEndpoint",
-							"type": "Expression"
-						}
-					}
+					"method": "GET"
 				}
 			},
 			{
@@ -68,7 +70,7 @@
 				"type": "ExecutePipeline",
 				"dependsOn": [
 					{
-						"activity": "Run Gift Orchestration",
+						"activity": "Run Gift Function",
 						"dependencyConditions": [
 							"Completed"
 						]
