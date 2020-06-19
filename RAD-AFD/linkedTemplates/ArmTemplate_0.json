@@ -21,6 +21,16 @@
 			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
 			"properties": {
+				"parameters": {
+					"sqlServer": {
+						"type": "String",
+						"defaultValue": "ellis-sql"
+					},
+					"sqlDatabase": {
+						"type": "String",
+						"defaultValue": "ellis-db"
+					}
+				},
 				"annotations": [],
 				"type": "AzureSqlDatabase",
 				"typeProperties": {
@@ -59,6 +69,8 @@
 								"value": "@concat('{\"sku\":',pipeline().parameters.sku,'}')",
 								"type": "Expression"
 							},
+							"linkedServices": [],
+							"datasets": [],
 							"authentication": {
 								"type": "MSI",
 								"resource": "https://management.azure.com/"
@@ -99,17 +111,23 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/pipe_gift_run')]",
+			"name": "[concat(parameters('factoryName'), '/pipe_gift_main')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"description": "This pipeline invokes the Gift (Durable Azure Function) and returns once it is fully complete or the timeout is reached",
 				"activities": [
 					{
-						"name": "Invoke Gift Orchestration",
+						"name": "Run Gift Function",
 						"description": "",
 						"type": "WebActivity",
-						"dependsOn": [],
+						"dependsOn": [
+							{
+								"activity": "SQL Scale Up",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
 						"policy": {
 							"timeout": "0.02:00:00",
 							"retry": 0,
@@ -126,55 +144,9 @@
 							"method": "GET",
 							"headers": {}
 						}
-					}
-				],
-				"concurrency": 1,
-				"parameters": {
-					"functionAppEndpoint": {
-						"type": "string"
-					}
-				},
-				"folder": {
-					"name": "GiftOrchestration"
-				},
-				"annotations": []
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/pipe_gift_main')]",
-			"type": "Microsoft.DataFactory/factories/pipelines",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"activities": [
-					{
-						"name": "pipe_invoke_gift",
-						"type": "ExecutePipeline",
-						"dependsOn": [
-							{
-								"activity": "pipe_scale_azuresqldb",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"userProperties": [],
-						"typeProperties": {
-							"pipeline": {
-								"referenceName": "pipe_gift_run",
-								"type": "PipelineReference"
-							},
-							"waitOnCompletion": true,
-							"parameters": {
-								"functionAppEndpoint": {
-									"value": "@pipeline().parameters.functionAppEndpoint",
-									"type": "Expression"
-								}
-							}
-						}
 					},
 					{
-						"name": "pipe_scale_azuresqldb",
+						"name": "SQL Scale Up",
 						"type": "ExecutePipeline",
 						"dependsOn": [],
 						"userProperties": [],
@@ -202,7 +174,49 @@
 									"type": "Expression"
 								},
 								"sku": {
-									"value": "@pipeline().parameters.sku",
+									"value": "@pipeline().parameters.skuBefore",
+									"type": "Expression"
+								}
+							}
+						}
+					},
+					{
+						"name": "SQL Scale Down",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Run Gift Function",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "pipe_scale_azuresqldb",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"resourceGroupName": {
+									"value": "@pipeline().parameters.resourceGroupName",
+									"type": "Expression"
+								},
+								"subscriptionId": {
+									"value": "@pipeline().parameters.subscriptionId",
+									"type": "Expression"
+								},
+								"serverName": {
+									"value": "@pipeline().parameters.serverName",
+									"type": "Expression"
+								},
+								"databaseName": {
+									"value": "@pipeline().parameters.databaseName",
+									"type": "Expression"
+								},
+								"sku": {
+									"value": "@pipeline().parameters.skuAfter",
 									"type": "Expression"
 								}
 							}
@@ -230,10 +244,17 @@
 						"type": "string",
 						"defaultValue": "ellis-db"
 					},
-					"sku": {
+					"skuBefore": {
 						"type": "string",
 						"defaultValue": {
 							"name": "S1",
+							"tier": "Standard"
+						}
+					},
+					"skuAfter": {
+						"type": "string",
+						"defaultValue": {
+							"name": "S0",
 							"tier": "Standard"
 						}
 					}
@@ -244,7 +265,6 @@
 				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/pipelines/pipe_gift_run')]",
 				"[concat(variables('factoryId'), '/pipelines/pipe_scale_azuresqldb')]"
 			]
 		}
