@@ -4,12 +4,10 @@
 	"properties": {
 		"parameters": {
 			"sqlServer": {
-				"type": "String",
-				"defaultValue": "ellis-sql"
+				"type": "String"
 			},
 			"sqlDatabase": {
-				"type": "String",
-				"defaultValue": "ellis-db"
+				"type": "String"
 			}
 		},
 		"annotations": [],
